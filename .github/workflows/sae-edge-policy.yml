@@ -6,6 +6,8 @@ on:
     paths:
       - ".sae/edge-core.json"
       - ".github/workflows/sae-edge-policy.yml"
+      - ".github/workflows/sae-edge-future.yml"
+      - "sae-edge/**"
 permissions:
   contents: read
 jobs:
@@ -13,6 +15,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Compile Python federation tools
+        run: python3 -m py_compile sae-edge/validate.py sae-edge/future-onboard.py
+      - name: Exercise safe missing-secret behavior
+        run: |
+          unset SAE_FEDERATION_TOKEN
+          python3 sae-edge/future-onboard.py
       - name: Validate SAE EDGE CORE manifest (no routing activated)
         shell: bash
         run: |
@@ -20,7 +28,7 @@ jobs:
           import json, os, pathlib, sys
           p = pathlib.Path(".sae/edge-core.json")
           if not p.is_file():
-              print("No .sae/edge-core.json found: not enrolled.")
+              print("No .sae/edge-core.json found: central controller.")
               sys.exit(0)
           j = json.loads(p.read_text())
           assert j["schema_version"] == 1
